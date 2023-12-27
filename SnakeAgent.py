@@ -2,14 +2,14 @@ import sys
 import os
 from tensorflow.keras.callbacks import TensorBoard
 from time import time
-
 from os.path import dirname, abspath
-
+import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from agents.DQN_agents import DDQN
 from agents.DQN_agents.Dueling_DDQN import Dueling_DDQN
-from agents.DQN_agents.DDQN_With_Prioritised_Experience_Replay import  DDQN_With_Prioritised_Experience_Replay
-from agents.policy_gradient_agents.REINFORCE import  REINFORCE
+from agents.DQN_agents.DDQN_With_Prioritised_Experience_Replay import DDQN_With_Prioritised_Experience_Replay
+from agents.policy_gradient_agents.REINFORCE import REINFORCE
 from agents.policy_gradient_agents.PPO import PPO
 from custom_environments.SnakeGame.SnakeEnvironment import SnakeGameEnv
 
@@ -23,10 +23,10 @@ import pandas as pd
 
 config = Config()
 config.seed = 1
-config.environment = SnakeGameEnv() #gym.make("CartPole-v0")
+config.environment = SnakeGameEnv()  # gym.make("CartPole-v0")
 config.test_environment = SnakeGameEnv()
-config.num_episodes_to_run = 200
-config.random_episodes_to_run = 50
+config.num_episodes_to_run = 20
+config.random_episodes_to_run = 0
 config.eval_every_n_steps = 100
 config.file_to_save_test_eval_results = "results/test_eval_results/"
 config.fixed_action_frm_existing_policy = 3
@@ -41,11 +41,18 @@ config.randomise_random_seed = True
 config.save_model = True
 config.save_model_location = os.path.dirname(__file__) + '/TrainedModels/'
 config.turn_off_exploration = False
-config.file_to_save_results_graph = "results/data_and_graphs/DeliveryDayPersAgent_Results_Graph.png"
+#config.file_to_save_results_graph = "results/data_and_graphs/DeliveryDayPersAgent_Results_Graph.png"
 
-model_dir = "./SnakeRLAgent/TrainedModels/"
-if not os.path.exists(model_dir):
-    os.makedirs(model_dir)
+# Set the location to save the model and ensure the directory exists
+model_save_path = os.path.join(dirname(__file__), 'TrainedModels')
+config.save_model = True
+config.save_model_location = model_save_path
+if not os.path.exists(model_save_path):
+    os.makedirs(model_save_path)
+
+# Initialize TensorBoard
+tensorboard_log_dir = f"logs/{config.environment.envName}_{int(time())}"
+tensorboard = TensorBoard(log_dir=tensorboard_log_dir)
 
 config.hyperparameters = {
     "DQN_Agents": {
@@ -147,19 +154,55 @@ config.hyperparameters = {
         "do_evaluation_iterations": True
     }
 }
-
-
 if __name__ == "__main__":
-    agent_objs = [DQN, DDQN]
-    # agent_objs = [SAC_Discrete, DDQN, Dueling_DDQN, DQN, DQN_With_Fixed_Q_Targets,
-                    # DDQN_With_Prioritised_Experience_Replay, A2C, PPO, A3C ]
+    agent_objs = [DDQN_With_Prioritised_Experience_Replay]  # Lista de objetos de agentes
     trainer = Trainer(config, agent_objs)
     results = trainer.run_games_for_agents()
 
     for agent_obj in agent_objs:
-        agent_name = agent_obj.agent_name
-        data = pd.DataFrame(
-            {'Episode No': results[agent_name][0][0], 'Score': results[agent_name][0][1], 'Steps': results[agent_name][0][3],
-             'Rolling Score': results[agent_name][0][2]})
-        data.to_csv('output_' + agent_name.replace(' ', '') + '_' + config.num_episodes_to_run + 'episodes.csv', encoding='utf-8-sig')
-    print('end')
+        agent_name = agent_obj.agent_name  # Usar el nombre del agente actual
+        episode_numbers, rewards, rolling_scores, steps, _ = results[agent_name][0]
+
+        # Preparar datos para gráficos
+        scores = rewards
+        num_steps = steps
+
+        # Registrar en TensorBoard y preparar datos para Matplotlib
+        score_data_for_plot = []
+        steps_data_for_plot = []
+        for episode_index in range(len(episode_numbers)):
+            score = rolling_scores[episode_index]
+            step = steps[episode_index]
+
+            # Registro en TensorBoard
+            tensorboard_log_dir = f"logs/{agent_name}_{int(time())}"
+            tensorboard = TensorBoard(log_dir=tensorboard_log_dir)
+            with tf.summary.create_file_writer(tensorboard_log_dir).as_default():
+                tf.summary.scalar('Rolling Score', score, step=episode_index)
+                tf.summary.scalar('Episode Steps', step, step=episode_index)
+            tf.summary.flush()
+
+            # Agregar datos para Matplotlib
+            score_data_for_plot.append(score)
+            steps_data_for_plot.append(step)
+
+        # Mostrar gráfico usando Matplotlib
+        plt.figure(figsize=(10, 6))
+        plt.scatter(episode_numbers, score_data_for_plot, label='Score', color='g')
+        plt.scatter(episode_numbers, steps_data_for_plot, label='No of Steps', color='r')
+        plt.title(f'{agent_name} Agent - Performance')
+        plt.xlabel('Episode No')
+        plt.ylabel('Score/Steps')
+        plt.legend()
+        plt.show()
+
+        # Guardar los resultados en CSV
+        data = pd.DataFrame({
+            'Episode No': episode_numbers,
+            'Score': rewards,
+            'Steps': steps,
+            'Rolling Score': rolling_scores
+        })
+        data.to_csv(f'output_{agent_name.replace(" ", "")}_{config.num_episodes_to_run}episodes.csv', encoding='utf-8-sig')
+
+    print('Registro en TensorBoard completado.')
