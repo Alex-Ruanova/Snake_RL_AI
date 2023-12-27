@@ -13,8 +13,8 @@ from agents.policy_gradient_agents.REINFORCE import REINFORCE
 from agents.policy_gradient_agents.PPO import PPO
 from custom_environments.SnakeGame.SnakeEnvironment import SnakeGameEnv
 
-sys.path.append(dirname(dirname(abspath(__file__))))
 
+sys.path.append(dirname(dirname(abspath(__file__))))
 from agents.Trainer import Trainer
 from utilities.data_structures.Config import Config
 from agents.DQN_agents.DQN import DQN
@@ -23,10 +23,10 @@ import pandas as pd
 
 config = Config()
 config.seed = 1
-config.environment = SnakeGameEnv()  # gym.make("CartPole-v0")
+config.environment = SnakeGameEnv()
 config.test_environment = SnakeGameEnv()
-config.num_episodes_to_run = 20
-config.random_episodes_to_run = 0
+config.num_episodes_to_run = 10
+config.random_episodes_to_run = 10
 config.eval_every_n_steps = 100
 config.file_to_save_test_eval_results = "results/test_eval_results/"
 config.fixed_action_frm_existing_policy = 3
@@ -98,9 +98,9 @@ config.hyperparameters = {
         "episodes_per_learning_round": 4,
         "normalise_rewards": True,
         "gradient_clipping_norm": 7.0,
-        "mu": 0.0, #only required for continuous action games
-        "theta": 0.0, #only required for continuous action games
-        "sigma": 0.0, #only required for continuous action games
+        "mu": 0.0,
+        "theta": 0.0,
+        "sigma": 0.0,
         "epsilon_decay_rate_denominator": 1.0,
         "clip_rewards": False
     },
@@ -155,38 +155,40 @@ config.hyperparameters = {
     }
 }
 if __name__ == "__main__":
-    agent_objs = [DDQN_With_Prioritised_Experience_Replay]  # Lista de objetos de agentes
+    agent_objs = [DQN]  # Agents List
+    # agent_objs = [SAC_Discrete, DDQN, Dueling_DDQN, DQN, DQN_With_Fixed_Q_Targets,
+                    # DDQN_With_Prioritised_Experience_Replay, A2C, PPO, A3C ]
     trainer = Trainer(config, agent_objs)
     results = trainer.run_games_for_agents()
 
     for agent_obj in agent_objs:
-        agent_name = agent_obj.agent_name  # Usar el nombre del agente actual
+        agent_name = agent_obj.agent_name
         episode_numbers, rewards, rolling_scores, steps, _ = results[agent_name][0]
 
-        # Preparar datos para gráficos
+        # Preparing data for graphs
         scores = rewards
         num_steps = steps
 
-        # Registrar en TensorBoard y preparar datos para Matplotlib
+        # Registering in TensorBoard and preparing data for Matplotlib
         score_data_for_plot = []
         steps_data_for_plot = []
         for episode_index in range(len(episode_numbers)):
             score = rolling_scores[episode_index]
             step = steps[episode_index]
 
-            # Registro en TensorBoard
+            # TensorBoard registration
             tensorboard_log_dir = f"logs/{agent_name}_{int(time())}"
             tensorboard = TensorBoard(log_dir=tensorboard_log_dir)
             with tf.summary.create_file_writer(tensorboard_log_dir).as_default():
-                tf.summary.scalar('Rolling Score', score, step=episode_index)
-                tf.summary.scalar('Episode Steps', step, step=episode_index)
+                tf.summary.scalar('Score', score, step=episode_index)
+                tf.summary.scalar('Steps', step, step=episode_index)
             tf.summary.flush()
 
-            # Agregar datos para Matplotlib
+            # Adding data to Matplotlib
             score_data_for_plot.append(score)
             steps_data_for_plot.append(step)
 
-        # Mostrar gráfico usando Matplotlib
+        # Display chart using Matplotlib
         plt.figure(figsize=(10, 6))
         plt.scatter(episode_numbers, score_data_for_plot, label='Score', color='g')
         plt.scatter(episode_numbers, steps_data_for_plot, label='No of Steps', color='r')
@@ -196,7 +198,7 @@ if __name__ == "__main__":
         plt.legend()
         plt.show()
 
-        # Guardar los resultados en CSV
+        # Save results in CSV
         data = pd.DataFrame({
             'Episode No': episode_numbers,
             'Score': rewards,
@@ -205,4 +207,4 @@ if __name__ == "__main__":
         })
         data.to_csv(f'output_{agent_name.replace(" ", "")}_{config.num_episodes_to_run}episodes.csv', encoding='utf-8-sig')
 
-    print('Registro en TensorBoard completado.')
+    print('TensorBoard registration completed.')
