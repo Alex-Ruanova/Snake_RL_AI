@@ -21,6 +21,12 @@ from agents.DQN_agents.DQN import DQN
 from agents.DQN_agents.DDQN import DDQN
 import pandas as pd
 
+
+results_graph_dir = "results/data_and_graphs/"
+if not os.path.exists(results_graph_dir):
+    os.makedirs(results_graph_dir)
+
+
 config = Config()
 config.seed = 1
 config.environment = SnakeGameEnv()
@@ -28,7 +34,6 @@ config.test_environment = SnakeGameEnv()
 config.num_episodes_to_run = 200
 config.random_episodes_to_run = 20
 config.eval_every_n_steps = 100
-config.file_to_save_test_eval_results = "results/test_eval_results/"
 config.fixed_action_frm_existing_policy = 3
 config.show_solution_score = False
 config.visualise_individual_results = False
@@ -41,7 +46,6 @@ config.randomise_random_seed = True
 config.save_model = True
 config.save_model_location = os.path.dirname(__file__) + '/TrainedModels/'
 config.turn_off_exploration = False
-#config.file_to_save_results_graph = "results/data_and_graphs/DeliveryDayPersAgent_Results_Graph.png"
 
 # Set the location to save the model and ensure the directory exists
 model_save_path = os.path.join(dirname(__file__), 'TrainedModels')
@@ -155,7 +159,7 @@ config.hyperparameters = {
     }
 }
 if __name__ == "__main__":
-    agent_objs = [DDQN_With_Prioritised_Experience_Replay]  # Agents List
+    agent_objs = [DQN]  # Agents List
     # agent_objs = [SAC_Discrete, DDQN, Dueling_DDQN, DQN, DQN_With_Fixed_Q_Targets,
                     # DDQN_With_Prioritised_Experience_Replay, A2C, PPO, A3C ]
     trainer = Trainer(config, agent_objs)
@@ -196,6 +200,11 @@ if __name__ == "__main__":
         plt.xlabel('Episode No')
         plt.ylabel('Score/Steps')
         plt.legend()
+        # Save the chart in the specified directory
+        graph_save_path = os.path.join(results_graph_dir, f"{agent_name.replace(' ', '_')}_Performance_Graph.png")
+        plt.savefig(graph_save_path)
+        print(f"Graph saved at {graph_save_path}")  # Optional: prints the path to the file where the graph was saved
+
         plt.show()
 
         # Save results in CSV
