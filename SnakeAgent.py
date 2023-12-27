@@ -25,8 +25,8 @@ config = Config()
 config.seed = 1
 config.environment = SnakeGameEnv()
 config.test_environment = SnakeGameEnv()
-config.num_episodes_to_run = 10
-config.random_episodes_to_run = 10
+config.num_episodes_to_run = 200
+config.random_episodes_to_run = 20
 config.eval_every_n_steps = 100
 config.file_to_save_test_eval_results = "results/test_eval_results/"
 config.fixed_action_frm_existing_policy = 3
@@ -155,7 +155,7 @@ config.hyperparameters = {
     }
 }
 if __name__ == "__main__":
-    agent_objs = [DQN]  # Agents List
+    agent_objs = [DDQN_With_Prioritised_Experience_Replay]  # Agents List
     # agent_objs = [SAC_Discrete, DDQN, Dueling_DDQN, DQN, DQN_With_Fixed_Q_Targets,
                     # DDQN_With_Prioritised_Experience_Replay, A2C, PPO, A3C ]
     trainer = Trainer(config, agent_objs)
