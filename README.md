@@ -37,7 +37,8 @@ source venv/bin/activate  # On Windows use `.\venv\Scripts\activate`
 Install the required dependencies:
 pip install -r requirements.txt
 
-[!TIP] Always activate your virtual environment before running the project to ensure you're using the correct dependencies.
+>[!TIP] 
+>Always activate your virtual environment before running the project to ensure you're using the correct dependencies.
 
 ## Usage
 To start the Snake RL agent, run:
