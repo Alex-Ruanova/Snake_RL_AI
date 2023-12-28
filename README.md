@@ -55,7 +55,8 @@ tensorboard --logdir=logs/
 
 Navigate to the provided link in your browser to access the TensorBoard dashboard.
 
-[!TIP] TensorBoard provides valuable insights into the training process, helping you understand and optimize your models.
+>[!TIP] 
+> TensorBoard provides valuable insights into the training process, helping you understand and optimize your models.
 
 ## Contributing
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
