@@ -31,7 +31,6 @@ class Base_Agent(object):
         self.hyperparameters = config.hyperparameters
         self.average_score_required_to_win = 100 #self.get_score_required_to_win()
         self.rolling_score_window = 5 #self.get_trials()
-        # self.max_steps_per_episode = self.environment.spec.max_episode_steps
         self.total_episode_score_so_far = 0
         self.total_episode_steps_so_far = 0
         self.game_full_episode_scores = []
